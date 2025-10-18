@@ -1,0 +1,76 @@
+{
+  "responses": [
+    {
+      "type": "text_only",
+      "content": "I understand you're looking for financial advice. Based on your spending patterns, I'd recommend setting aside 20% of your income for savings.",
+      "messageType": "text"
+    },
+    {
+      "type": "text_only",
+      "content": "Your current budget allocation looks good! You're spending $2,400 on essentials and $800 on discretionary items this month.",
+      "messageType": "text"
+    },
+    {
+      "type": "text_with_actions",
+      "content": "I can help you create a personalized budget plan. Here are some quick actions to get started:",
+      "messageType": "text",
+      "actions": ["View Budget Template", "Set Savings Goal", "Track Expenses"]
+    },
+    {
+      "type": "text_with_actions",
+      "content": "Your investment portfolio needs rebalancing. Current allocation: 60% stocks, 30% bonds, 10% cash. Consider these options:",
+      "messageType": "text",
+      "actions": ["Rebalance Portfolio", "View Risk Assessment", "Schedule Consultation"]
+    },
+    {
+      "type": "text_with_image",
+      "content": "Here's your spending breakdown for this month. You can see that dining out represents 15% of your total expenses.",
+      "messageType": "text",
+      "image": "https://via.placeholder.com/400x300/2D9A86/FFFFFF?text=Monthly+Spending+Chart"
+    },
+    {
+      "type": "text_with_image",
+      "content": "Your investment growth over the past year shows a positive trend with 8.2% returns. Here's the detailed chart:",
+      "messageType": "text",
+      "image": "https://via.placeholder.com/400x250/34D399/FFFFFF?text=Investment+Growth+Chart"
+    },
+    {
+      "type": "text_image_actions",
+      "content": "Your financial health score is 85/100! Here's a detailed breakdown with recommended actions:",
+      "messageType": "text",
+      "image": "https://via.placeholder.com/400x300/EEFE6D/000000?text=Financial+Health+Score+85%2F100",
+      "actions": ["Improve Credit Score", "Increase Emergency Fund", "Optimize Investments"]
+    },
+    {
+      "type": "text_image_actions",
+      "content": "Market analysis shows tech stocks are performing well. Your portfolio allocation could benefit from adjustments:",
+      "messageType": "text",
+      "image": "https://via.placeholder.com/400x280/F59E0B/FFFFFF?text=Market+Analysis+Chart",
+      "actions": ["Buy Tech Stocks", "Sell Underperformers", "Set Price Alerts"]
+    },
+    {
+      "type": "text_only",
+      "content": "Great question! Emergency funds should typically cover 3-6 months of living expenses. Based on your current spending of $3,200/month, aim for $9,600-$19,200.",
+      "messageType": "text"
+    },
+    {
+      "type": "text_with_actions",
+      "content": "Tax season is approaching! I can help you prepare and potentially save money with these strategies:",
+      "messageType": "text",
+      "actions": ["Tax Deduction Finder", "Upload Tax Documents", "Schedule Tax Review"]
+    },
+    {
+      "type": "text_with_image",
+      "content": "Your debt-to-income ratio is currently 28%, which is within the healthy range. Here's how it compares to recommended levels:",
+      "messageType": "text",
+      "image": "https://via.placeholder.com/400x200/EF4444/FFFFFF?text=Debt-to-Income+Ratio+28%25"
+    },
+    {
+      "type": "text_image_actions",
+      "content": "Retirement planning analysis complete! You're on track but could optimize contributions for better returns:",
+      "messageType": "text",
+      "image": "https://via.placeholder.com/400x320/8B5CF6/FFFFFF?text=Retirement+Projection+Chart",
+      "actions": ["Increase 401k", "Open Roth IRA", "View Retirement Calculator"]
+    }
+  ]
+}

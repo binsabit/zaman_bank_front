@@ -1,0 +1,121 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+:root {
+  --background: #f8fafc;
+  --foreground: #1e293b;
+
+  /* Zaman Color DNA Palette */
+  --zaman-persian-green: #2D9A86;
+  --zaman-solar: #EEFE6D;
+  --zaman-cloud: #ffffff;
+
+  /* Primary colors using Zaman palette */
+  --primary: var(--zaman-persian-green);
+  --primary-dark: #1e6b5c;
+  --secondary: var(--zaman-solar);
+  --accent: var(--zaman-solar);
+
+  --card-background: var(--zaman-cloud);
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --success: var(--zaman-persian-green);
+  --warning: #f59e0b;
+  --error: #ef4444;
+  --info: var(--zaman-persian-green);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: 'Inter', var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@layer base {
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    line-height: 1.2;
+  }
+
+  h1 {
+    font-size: 1.75rem;
+  }
+
+  h2 {
+    font-size: 1.5rem;
+  }
+
+  h3 {
+    font-size: 1.25rem;
+  }
+
+  @media (min-width: 768px) {
+    h1 {
+      font-size: 2rem;
+    }
+
+    h2 {
+      font-size: 1.75rem;
+    }
+
+    h3 {
+      font-size: 1.5rem;
+    }
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply font-medium py-3 px-6 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background-color: var(--zaman-persian-green);
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background-color: var(--primary-dark);
+  }
+
+  .btn-primary:focus {
+    ring-color: var(--zaman-persian-green);
+  }
+
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 font-medium py-3 px-6 rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
+    border-color: var(--zaman-persian-green);
+    color: var(--zaman-persian-green);
+  }
+
+  .btn-secondary:focus {
+    ring-color: var(--zaman-persian-green);
+  }
+
+  .card {
+    @apply rounded-2xl shadow-sm border border-gray-100;
+    background-color: var(--zaman-cloud);
+  }
+
+  .input-field {
+    @apply w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-1 transition-colors;
+    background-color: var(--zaman-cloud);
+  }
+
+  .input-field:focus {
+    border-color: var(--zaman-persian-green);
+    ring-color: var(--zaman-persian-green);
+  }
+}
