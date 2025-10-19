@@ -1,6 +1,6 @@
 import { MessageType, ChatResponse } from '@/types/chat';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+const API_BASE_URL = '/api';
 
 export class ChatAPI {
   private static instance: ChatAPI;
@@ -22,24 +22,39 @@ export class ChatAPI {
     userId?: string
   ): Promise<ChatResponse> {
     try {
+      // Create FormData for all message types
       const formData = new FormData();
-      formData.append('content', content);
-      formData.append('messageType', messageType);
 
+      // For audio messages, use 'audio' key for file and don't include text message
+      if (messageType === 'audio' && file) {
+        // Save audio locally as MP3 with UUID name, then convert to WAV
+        const mp3File = await this.saveAudioAsMP3(file);
+        const wavFile = await this.convertToWav(mp3File);
+        formData.append('audio', wavFile);
+      } else {
+        // For text messages (with or without files), use 'message' key
+        formData.append('message', content);
+
+        // Add file with 'file' key for non-audio files
+        if (file && messageType !== 'audio') {
+          formData.append('file', file);
+        }
+      }
+
+      // Add session ID
+      formData.append('session_id', this.getSessionId());
+
+      // Add user ID if provided
       if (userId) {
-        formData.append('userId', userId);
+        formData.append('user_id', userId);
       }
 
-      if (file) {
-        formData.append('file', file);
-      }
-
-      const response = await fetch(`${API_BASE_URL}/chat`, {
+      const response = await fetch(`${API_BASE_URL}/message`, {
         method: 'POST',
-        body: formData,
         headers: {
           'X-Session-ID': this.getSessionId(),
         },
+        body: formData,
       });
 
       if (!response.ok) {
@@ -47,7 +62,13 @@ export class ChatAPI {
       }
 
       const data = await response.json();
-      return data;
+
+      // Transform Django response to match our ChatResponse format
+      return {
+        content: data.response || data.message || 'No response from server',
+        type: 'text',
+        actions: data.actions || []
+      };
     } catch (error) {
       console.error('Error sending message:', error);
 
@@ -55,28 +76,77 @@ export class ChatAPI {
       return await this.getMockResponse(messageType, file);
     }
   }
-  
+
   /**
-   * Upload file and get analysis
+   * Reset the chat session
+   */
+  async resetChat(): Promise<void> {
+    try {
+      console.log('Attempting to reset chat...');
+      console.log('API_BASE_URL:', API_BASE_URL);
+
+      const payload = {
+        reset: true
+      };
+
+      console.log('Reset payload:', payload);
+      console.log('Reset URL:', `${API_BASE_URL}/reset`);
+
+      const response = await fetch(`${API_BASE_URL}/reset`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Session-ID': this.getSessionId(),
+        },
+        body: JSON.stringify(payload),
+      });
+
+      console.log('Reset response status:', response.status);
+      console.log('Reset response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Reset response error:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
+      }
+
+      const responseData = await response.text();
+      console.log('Reset response data:', responseData);
+
+      // Clear local session data on successful reset
+      localStorage.removeItem('chat-session-id');
+      localStorage.removeItem('chat-messages');
+      localStorage.removeItem('chat-files');
+      localStorage.removeItem('chat-audio-files');
+
+      console.log('Chat reset successful');
+    } catch (error) {
+      console.error('Error resetting chat:', error);
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : 'No stack trace'
+      });
+
+      // Still clear local data even if backend call fails
+      localStorage.removeItem('chat-session-id');
+      localStorage.removeItem('chat-messages');
+      localStorage.removeItem('chat-files');
+      localStorage.removeItem('chat-audio-files');
+
+      // Re-throw the error so the UI can handle it
+      throw error;
+    }
+  }
+
+  /**
+   * Upload file and get analysis (now handled through sendMessage)
+   * @deprecated Use sendMessage with messageType 'file' instead
    */
   async uploadFile(file: File): Promise<ChatResponse> {
     try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch(`${API_BASE_URL}/upload`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-Session-ID': this.getSessionId(),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      return await response.json();
+      // Use the unified messages endpoint for file uploads
+      return await this.sendMessage('', 'file', file);
     } catch (error) {
       console.error('Error uploading file:', error);
       return this.getMockFileResponse(file);
@@ -84,31 +154,225 @@ export class ChatAPI {
   }
 
   /**
-   * Convert audio to text
+   * Convert audio to text (now handled through sendMessage)
+   * @deprecated Use sendMessage with messageType 'audio' instead
    */
   async transcribeAudio(audioFile: File): Promise<string> {
     try {
-      const formData = new FormData();
-      formData.append('audio', audioFile);
-
-      const response = await fetch(`${API_BASE_URL}/transcribe`, {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'X-Session-ID': this.getSessionId(),
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data.text || '';
+      // Use the unified messages endpoint for transcription
+      const response = await this.sendMessage('', 'audio', audioFile);
+      return response.content || 'Audio transcription not available';
     } catch (error) {
       console.error('Error transcribing audio:', error);
       return 'Audio transcription not available';
     }
+  }
+
+  /**
+   * Generate UUID v4
+   */
+  private generateUUID(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+      const r = Math.random() * 16 | 0;
+      const v = c == 'x' ? r : (r & 0x3 | 0x8);
+      return v.toString(16);
+    });
+  }
+
+  /**
+   * Save audio file locally as MP3 with random UUID name
+   */
+  private async saveAudioAsMP3(audioFile: File): Promise<File> {
+    try {
+      // Generate UUID for filename
+      const uuid = this.generateUUID();
+      const mp3FileName = `${uuid}.mp3`;
+
+      // If already MP3, just rename and save
+      if (audioFile.type === 'audio/mp3' || audioFile.type === 'audio/mpeg' || audioFile.name.toLowerCase().endsWith('.mp3')) {
+        const mp3File = new File([audioFile], mp3FileName, { type: 'audio/mp3' });
+        this.saveFileToLocalStorage(mp3File, uuid);
+        return mp3File;
+      }
+
+      // Convert to MP3 format
+      const mp3File = await this.convertToMP3(audioFile, mp3FileName);
+      this.saveFileToLocalStorage(mp3File, uuid);
+      return mp3File;
+
+    } catch (error) {
+      console.warn('Failed to save audio as MP3, using original file:', error);
+      return audioFile;
+    }
+  }
+
+  /**
+   * Convert audio file to MP3 format
+   */
+  private async convertToMP3(audioFile: File, filename: string): Promise<File> {
+    try {
+      // Create audio context for conversion
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+      // Read the audio file as array buffer
+      const arrayBuffer = await audioFile.arrayBuffer();
+
+      // Decode the audio data
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+      // For browser compatibility, we'll create a WAV first then use it as MP3
+      // In a real implementation, you'd use a library like lamejs for proper MP3 encoding
+      const wavBuffer = this.audioBufferToWav(audioBuffer);
+
+      // Create MP3 file (note: this is actually WAV data with MP3 extension for simplicity)
+      // For true MP3 encoding, you would use a library like lamejs
+      const mp3File = new File([wavBuffer], filename, { type: 'audio/mp3' });
+
+      return mp3File;
+    } catch (error) {
+      console.warn('Audio conversion to MP3 failed, creating MP3 file from original:', error);
+      // Fallback: create MP3 file from original data
+      return new File([audioFile], filename, { type: 'audio/mp3' });
+    }
+  }
+
+  /**
+   * Save file to localStorage with UUID key
+   */
+  private saveFileToLocalStorage(file: File, uuid: string): void {
+    try {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const audioData = {
+          uuid: uuid,
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: reader.result, // Base64 encoded data
+          timestamp: Date.now()
+        };
+
+        // Save to localStorage
+        const savedAudios = JSON.parse(localStorage.getItem('chat-audio-files') || '[]');
+        savedAudios.push(audioData);
+
+        // Keep only last 10 audio files to prevent localStorage overflow
+        if (savedAudios.length > 10) {
+          savedAudios.splice(0, savedAudios.length - 10);
+        }
+
+        localStorage.setItem('chat-audio-files', JSON.stringify(savedAudios));
+        console.log(`Audio file saved locally with UUID: ${uuid}`);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      console.warn('Failed to save audio file to localStorage:', error);
+    }
+  }
+
+  /**
+   * Convert audio file to WAV format
+   */
+  private async convertToWav(audioFile: File): Promise<File> {
+    try {
+      // If already WAV format, return as is
+      if (audioFile.type === 'audio/wav' || audioFile.name.toLowerCase().endsWith('.wav')) {
+        return audioFile;
+      }
+
+      // Create audio context for conversion
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+
+      // Read the audio file as array buffer
+      const arrayBuffer = await audioFile.arrayBuffer();
+
+      // Decode the audio data
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+
+      // Convert to WAV format
+      const wavBuffer = this.audioBufferToWav(audioBuffer);
+
+      // Create new WAV file
+      const wavFile = new File([wavBuffer],
+        audioFile.name.replace(/\.[^/.]+$/, '') + '.wav',
+        { type: 'audio/wav' }
+      );
+
+      return wavFile;
+    } catch (error) {
+      console.warn('Audio conversion failed, sending original file:', error);
+      return audioFile;
+    }
+  }
+
+  /**
+   * Convert AudioBuffer to WAV format
+   */
+  private audioBufferToWav(buffer: AudioBuffer): ArrayBuffer {
+    const numOfChan = buffer.numberOfChannels;
+    const length = buffer.length * numOfChan * 2 + 44;
+    const arrayBuffer = new ArrayBuffer(length);
+    const view = new DataView(arrayBuffer);
+    const channels = [];
+    let sample;
+    let offset = 0;
+    let pos = 0;
+
+    // Write WAV header
+    const setUint16 = (data: number) => {
+      view.setUint16(pos, data, true);
+      pos += 2;
+    };
+
+    const setUint32 = (data: number) => {
+      view.setUint32(pos, data, true);
+      pos += 4;
+    };
+
+    // RIFF identifier
+    setUint32(0x46464952);
+    // File length minus 8 bytes
+    setUint32(length - 8);
+    // WAVE identifier
+    setUint32(0x45564157);
+    // Format chunk identifier
+    setUint32(0x20746d66);
+    // Format chunk length
+    setUint32(16);
+    // Sample format (PCM)
+    setUint16(1);
+    // Channel count
+    setUint16(numOfChan);
+    // Sample rate
+    setUint32(buffer.sampleRate);
+    // Byte rate
+    setUint32(buffer.sampleRate * 2 * numOfChan);
+    // Block align
+    setUint16(numOfChan * 2);
+    // Bits per sample
+    setUint16(16);
+    // Data chunk identifier
+    setUint32(0x61746164);
+    // Data chunk length
+    setUint32(length - pos - 4);
+
+    // Get channel data
+    for (let i = 0; i < numOfChan; i++) {
+      channels.push(buffer.getChannelData(i));
+    }
+
+    // Interleave samples
+    while (pos < length) {
+      for (let i = 0; i < numOfChan; i++) {
+        sample = Math.max(-1, Math.min(1, channels[i][offset]));
+        sample = sample < 0 ? sample * 0x8000 : sample * 0x7fff;
+        view.setInt16(pos, sample, true);
+        pos += 2;
+      }
+      offset++;
+    }
+
+    return arrayBuffer;
   }
 
   /**
@@ -294,18 +558,6 @@ export class ChatAPI {
     };
   }
 
-  /**
-   * Generate mock chart URLs
-   */
-  private generateMockChart(type: string): string {
-    const charts = {
-      spending: `https://quickchart.io/chart?c={type:'doughnut',data:{labels:['Food','Transport','Entertainment','Utilities','Other'],datasets:[{data:[30,20,15,20,15],backgroundColor:['%232D9A86','%23EEFE6D','%2364748b','%23f59e0b','%23ef4444']}]}}`,
-      transactions: `https://quickchart.io/chart?c={type:'line',data:{labels:['Jan','Feb','Mar','Apr','May','Jun'],datasets:[{label:'Income',data:[3000,3200,3100,3300,3400,3500],borderColor:'%232D9A86',fill:false},{label:'Expenses',data:[2500,2700,2600,2800,2900,2700],borderColor:'%23EEFE6D',fill:false}]}}`,
-      balance: `https://quickchart.io/chart?c={type:'bar',data:{labels:['Checking','Savings','Investment'],datasets:[{data:[8230,4220,15000],backgroundColor:['%232D9A86','%23EEFE6D','%2364748b']}]}}`
-    };
-
-    return charts[type as keyof typeof charts] || charts.spending;
-  }
 }
 
 // Export singleton instance

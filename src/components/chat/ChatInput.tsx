@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Send, Mic, MicOff, Paperclip, X, Image as ImageIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { MessageType } from '@/types/chat';
 
 interface ChatInputProps {
@@ -20,28 +19,28 @@ export default function ChatInput({ onSendMessage, disabled, initialText }: Chat
   const fileInputRef = useRef<HTMLInputElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Update message when initialText changes
   useEffect(() => {
     if (initialText) {
       setMessage(initialText);
-      // Focus on textarea and position cursor at the end
-      if (textareaRef.current) {
-        textareaRef.current.focus();
-        textareaRef.current.setSelectionRange(initialText.length, initialText.length);
+      // Focus on input and position cursor at the end
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.setSelectionRange(initialText.length, initialText.length);
       }
     }
   }, [initialText]);
 
-  // Auto-resize textarea
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
-    }
-  }, [message]);
+  // No auto-resize needed for input
+  // useEffect(() => {
+  //   const input = inputRef.current;
+  //   if (textarea) {
+  //     textarea.style.height = 'auto';
+  //     textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+  //   }
+  // }, [message]);
 
   const handleSend = () => {
     if ((!message.trim() && !attachedFile) || disabled) return;
@@ -138,119 +137,173 @@ export default function ChatInput({ onSendMessage, disabled, initialText }: Chat
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const [isHoldingRecord, setIsHoldingRecord] = useState(false);
+  const recordingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle hold-to-record functionality
+  const handleMouseDown = async () => {
+    if (disabled) return;
+    setIsHoldingRecord(true);
+    recordingTimeoutRef.current = setTimeout(async () => {
+      await startRecording();
+    }, 200); // Small delay to distinguish from tap
+  };
+
+  const handleMouseUp = () => {
+    if (recordingTimeoutRef.current) {
+      clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
+
+    if (isHoldingRecord) {
+      setIsHoldingRecord(false);
+      if (isRecording) {
+        stopRecording();
+      } else if ((!message.trim() && !attachedFile)) {
+        // Do nothing if no message
+      } else {
+        // Send message if there's content
+        handleSend();
+      }
+    }
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    handleMouseDown();
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    handleMouseUp();
+  };
+
   return (
-    <div className="p-4 bg-white border-t border-gray-200">
-      {/* Attached File Preview */}
-      {attachedFile && (
-        <div className="mb-3 p-3 bg-gray-50 rounded-lg flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            {attachedFile.type.startsWith('image/') ? (
-              <ImageIcon className="w-5 h-5 text-gray-500" />
-            ) : (
-              <Paperclip className="w-5 h-5 text-gray-500" />
-            )}
-            <span className="text-sm text-gray-700 truncate max-w-48">
-              {attachedFile.name}
-            </span>
-            <span className="text-xs text-gray-500">
-              ({(attachedFile.size / 1024).toFixed(1)} KB)
-            </span>
-          </div>
-          <button
-            onClick={removeAttachedFile}
-            className="p-1 hover:bg-gray-200 rounded-full transition-colors"
-          >
-            <X className="w-4 h-4 text-gray-500" />
-          </button>
+    <div className="px-4 py-3"
+         style={{
+           background: 'var(--card-bg)',
+           borderTop: '1px solid var(--border)'
+         }}>
+      {/* File preview and recording status (if any) in a single horizontal line */}
+      {(attachedFile || isRecording) && (
+        <div className="mb-3 flex items-center justify-between p-3 rounded-lg"
+             style={{
+               background: isRecording
+                 ? 'rgba(239, 68, 68, 0.1)'
+                 : 'var(--border)',
+               border: isRecording ? '1px solid rgba(239, 68, 68, 0.3)' : 'none'
+             }}>
+          {attachedFile && !isRecording && (
+            <>
+              <div className="flex items-center space-x-2">
+                {attachedFile.type.startsWith('image/') ? (
+                  <ImageIcon className="w-5 h-5" style={{color: 'var(--text-secondary)'}} />
+                ) : (
+                  <Paperclip className="w-5 h-5" style={{color: 'var(--text-secondary)'}} />
+                )}
+                <span className="text-sm truncate max-w-48" style={{color: 'var(--foreground)'}}>
+                  {attachedFile.name}
+                </span>
+                <span className="text-xs" style={{color: 'var(--text-secondary)'}}>
+                  ({(attachedFile.size / 1024).toFixed(1)} KB)
+                </span>
+              </div>
+              <button
+                onClick={removeAttachedFile}
+                className="p-1 rounded-full transition-colors hover:scale-110"
+                style={{background: 'var(--border)'}}
+              >
+                <X className="w-4 h-4" style={{color: 'var(--text-secondary)'}} />
+              </button>
+            </>
+          )}
+
+          {isRecording && (
+            <>
+              <div className="flex items-center space-x-2">
+                <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-sm text-red-400">Recording...</span>
+              </div>
+              <span className="text-sm text-red-400 font-mono">
+                {formatRecordingTime(recordingTime)}
+              </span>
+            </>
+          )}
         </div>
       )}
 
-      {/* Recording Status */}
-      {isRecording && (
-        <div className="mb-3 p-3 bg-red-50 rounded-lg flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-            <span className="text-sm text-red-700">Recording...</span>
-          </div>
-          <span className="text-sm text-red-700 font-mono">
-            {formatRecordingTime(recordingTime)}
-          </span>
-        </div>
-      )}
-
-      {/* Input Area */}
-      <div className="flex items-end space-x-2">
+      {/* Single horizontal input line */}
+      <div className="flex items-center space-x-3">
         {/* File Attachment Button */}
         <button
           onClick={() => fileInputRef.current?.click()}
           disabled={disabled || isRecording}
           title="Attach file"
-          className={cn(
-            "p-3 rounded-full transition-all duration-200 hover:scale-105 w-12 h-12 flex items-center justify-center self-end",
-            disabled || isRecording
-              ? "text-gray-400 cursor-not-allowed bg-gray-100"
-              : "text-[#2D9A86] hover:bg-[#2D9A86] hover:text-white shadow-sm hover:shadow-md"
-          )}
+          className="p-3 rounded-lg transition-all duration-200 hover:scale-105 w-12 h-12 flex items-center justify-center shadow-sm hover:shadow-md flex-shrink-0"
+          style={{
+            background: disabled || isRecording
+              ? 'var(--border)'
+              : 'linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%)',
+            color: disabled || isRecording ? 'var(--text-secondary)' : 'white'
+          }}
         >
           <Paperclip className="w-5 h-5" />
         </button>
 
         {/* Text Input */}
-        <div className="flex-1 relative">
-          <textarea
-            ref={textareaRef}
+        <div className="flex-1">
+          <input
+            ref={inputRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder={isRecording ? "🎤 Recording..." : "💬 Type a message..."}
             disabled={disabled || isRecording}
-            rows={1}
-            className={cn(
-              "w-full px-4 py-3 border border-gray-200 rounded-2xl resize-none focus:outline-none focus:border-[#2D9A86] focus:ring-2 focus:ring-[#2D9A86]/20 transition-all duration-200 overflow-hidden",
-              (disabled || isRecording) && "bg-gray-50 cursor-not-allowed",
-              !disabled && !isRecording && "hover:border-[#2D9A86]/50"
-            )}
+            className="w-full px-4 py-3 border rounded-lg focus:outline-none transition-all duration-200"
             style={{
-              minHeight: '48px',
-              lineHeight: '1.5'
+              height: '48px',
+              background: 'var(--card-bg)',
+              borderColor: 'var(--border)',
+              color: 'var(--foreground)',
+              textAlign: message.trim() ? 'left' : 'center'
+            }}
+            onFocus={(e) => {
+              e.target.style.borderColor = 'var(--primary)';
+              e.target.style.boxShadow = '0 0 15px rgba(255, 107, 53, 0.2)';
+            }}
+            onBlur={(e) => {
+              e.target.style.borderColor = 'var(--border)';
+              e.target.style.boxShadow = 'none';
             }}
           />
         </div>
 
-        {/* Voice Recording Button */}
+        {/* Send/Record Button */}
         <button
-          onClick={isRecording ? stopRecording : startRecording}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+          onTouchStart={handleTouchStart}
+          onTouchEnd={handleTouchEnd}
           disabled={disabled}
-          title={isRecording ? "Stop recording" : "Start voice recording"}
-          className={cn(
-            "p-3 rounded-full transition-all duration-200 hover:scale-105 w-12 h-12 flex items-center justify-center self-end",
-            isRecording
-              ? "bg-red-500 text-white hover:bg-red-600 shadow-md animate-pulse"
-              : disabled
-              ? "text-gray-400 cursor-not-allowed bg-gray-100"
-              : "text-[#2D9A86] hover:bg-[#2D9A86] hover:text-white shadow-sm hover:shadow-md"
-          )}
+          title={isRecording ? "Release to send" : message.trim() || attachedFile ? "Send message" : "Hold to record"}
+          className="p-3 rounded-lg transition-all duration-200 hover:scale-105 w-12 h-12 flex items-center justify-center shadow-md hover:shadow-lg flex-shrink-0"
+          style={{
+            background: isRecording
+              ? 'linear-gradient(135deg, #EF4444 0%, #DC2626 100%)'
+              : (message.trim() || attachedFile)
+              ? 'linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%)'
+              : 'linear-gradient(135deg, var(--primary-blue) 0%, #60A5FA 100%)',
+            color: 'white'
+          }}
         >
           {isRecording ? (
             <MicOff className="w-5 h-5" />
+          ) : (message.trim() || attachedFile) ? (
+            <Send className="w-5 h-5" />
           ) : (
             <Mic className="w-5 h-5" />
           )}
-        </button>
-
-        {/* Send Button */}
-        <button
-          onClick={handleSend}
-          disabled={(!message.trim() && !attachedFile) || disabled || isRecording}
-          title="Send message"
-          className={cn(
-            "p-3 rounded-full transition-all duration-200 hover:scale-105 w-12 h-12 flex items-center justify-center self-end",
-            (!message.trim() && !attachedFile) || disabled || isRecording
-              ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-              : "bg-[#2D9A86] text-white hover:bg-[#1e6b5c] shadow-md hover:shadow-lg"
-          )}
-        >
-          <Send className="w-5 h-5" />
         </button>
       </div>
 

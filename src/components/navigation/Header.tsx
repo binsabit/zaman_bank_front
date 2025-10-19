@@ -16,7 +16,7 @@ interface HeaderProps {
 }
 
 export default function Header({
-  title = "Finance App",
+  title = "Финансовое приложение",
   showSearch = false,
   showNotifications = true,
   showReset = false,
@@ -28,13 +28,18 @@ export default function Header({
 }: HeaderProps) {
   const getGreeting = () => {
     const hour = new Date().getHours();
-    if (hour < 12) return "Good morning";
-    if (hour < 18) return "Good afternoon";
-    return "Good evening";
+    if (hour < 12) return "Доброе утро";
+    if (hour < 18) return "Добрый день";
+    return "Добрый вечер";
   };
 
   return (
-    <header className={cn("bg-white px-4 py-4 border-b border-gray-100", className)}>
+    <header className={cn("px-4 pt-8 pb-4 border-b transition-all duration-300", className)}
+            style={{
+              background: 'var(--card-bg)',
+              borderColor: 'var(--border)',
+              paddingTop: 'max(2rem, env(safe-area-inset-top, 2rem))'
+            }}>
       <div className="flex items-center justify-between max-w-md mx-auto">
         {leftElement && (
           <div className="flex-shrink-0 mr-3">
@@ -42,46 +47,51 @@ export default function Header({
           </div>
         )}
         <div className="flex-1">
-          {title && title !== "Finance App" ? (
-            <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
+          {title && title !== "Финансовое приложение" ? (
+            <h1 className="text-xl font-semibold" style={{color: 'var(--foreground)'}}>{title}</h1>
           ) : userName ? (
             <div>
-              <p className="text-sm text-gray-500">{getGreeting()}</p>
-              <h1 className="text-xl font-semibold text-gray-900">{userName}!</h1>
+              <p className="text-sm" style={{color: 'var(--text-secondary)'}}>{getGreeting()}</p>
+              <h1 className="text-xl font-semibold" style={{color: 'var(--foreground)'}}>{userName}! 💪</h1>
             </div>
           ) : (
-            <h1 className="text-xl font-semibold text-gray-900">{title}</h1>
+            <h1 className="text-xl font-semibold" style={{color: 'var(--foreground)'}}>{title}</h1>
           )}
         </div>
 
         <div className="flex items-center space-x-3">
           {showSearch && (
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <Search className="w-5 h-5 text-gray-600" />
+            <button className="p-2 rounded-full transition-all duration-200 hover:scale-110"
+                    style={{backgroundColor: 'var(--card-bg)', color: 'var(--text-secondary)'}}>
+              <Search className="w-5 h-5" />
             </button>
           )}
 
           {showReset && (
             <button
               onClick={onReset}
-              className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-              title="Reset Chat"
+              className="p-2 rounded-full transition-all duration-200 hover:scale-110"
+              style={{backgroundColor: 'var(--card-bg)', color: 'var(--text-secondary)'}}
+              title="Сбросить чат"
             >
-              <RotateCcw className="w-5 h-5 text-gray-600" />
+              <RotateCcw className="w-5 h-5" />
             </button>
           )}
 
           {showNotifications && (
-            <button className="relative p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <Bell className="w-5 h-5 text-gray-600" />
-              <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+            <button className="relative p-2 rounded-full transition-all duration-200 hover:scale-110"
+                    style={{backgroundColor: 'var(--card-bg)', color: 'var(--text-secondary)'}}>
+              <Bell className="w-5 h-5" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 animate-pulse"
+                    style={{backgroundColor: 'var(--primary)', borderColor: 'var(--card-bg)'}}></span>
             </button>
           )}
 
           {rightElement}
 
-          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
-            <span className="text-white text-sm font-medium">
+          <div className="w-10 h-10 rounded-full flex items-center justify-center transition-all duration-200 hover:scale-110"
+               style={{background: 'linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%)'}}>
+            <span className="text-white text-sm font-bold">
               {userName ? userName.charAt(0).toUpperCase() : 'U'}
             </span>
           </div>

@@ -19,8 +19,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className="font-sans antialiased" suppressHydrationWarning>
-        <div className="min-h-screen bg-gray-50">
+      <body className="font-sans antialiased" suppressHydrationWarning style={{background: 'var(--background)', color: 'var(--foreground)'}}>
+        <div className="min-h-screen" style={{background: 'var(--background)'}}>
           {children}
         </div>
       </body>

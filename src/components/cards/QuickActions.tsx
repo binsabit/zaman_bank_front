@@ -15,6 +15,13 @@ function CircularProgress({ percentage, size = 60, strokeWidth = 4 }: CircularPr
   const strokeDasharray = circumference;
   const strokeDashoffset = circumference - (percentage / 100) * circumference;
 
+  const getProgressColor = (percent: number) => {
+    if (percent >= 80) return '#4A90E2'; // Blue
+    if (percent >= 60) return '#CCFF00'; // Electric lime
+    if (percent >= 40) return '#FF6B35'; // Orange-red
+    return '#EF4444'; // Red
+  };
+
   return (
     <div className="relative flex items-center justify-center">
       <svg width={size} height={size} className="transform -rotate-90">
@@ -24,7 +31,7 @@ function CircularProgress({ percentage, size = 60, strokeWidth = 4 }: CircularPr
           cy={size / 2}
           r={radius}
           fill="transparent"
-          stroke="#e5e7eb"
+          stroke="#2A2A4A"
           strokeWidth={strokeWidth}
         />
         {/* Progress circle */}
@@ -33,17 +40,17 @@ function CircularProgress({ percentage, size = 60, strokeWidth = 4 }: CircularPr
           cy={size / 2}
           r={radius}
           fill="transparent"
-          stroke="#2D9A86"
+          stroke={getProgressColor(percentage)}
           strokeWidth={strokeWidth}
           strokeDasharray={strokeDasharray}
           strokeDashoffset={strokeDashoffset}
           strokeLinecap="round"
-          className="transition-all duration-300 ease-in-out"
+          className="transition-all duration-500 ease-in-out"
         />
       </svg>
       {/* Percentage text */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <span className="text-sm font-semibold text-gray-900">
+        <span className="text-sm font-bold" style={{color: 'var(--foreground)'}}>
           {percentage}%
         </span>
       </div>
@@ -64,34 +71,37 @@ function QuickAction({ label, percentage, onClick, className, isProductsCard }: 
     <button
       onClick={onClick}
       className={cn(
-        "flex flex-col items-center justify-center p-6 bg-white rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all duration-200 hover:scale-105 aspect-square group",
+        "flex flex-col items-center justify-center p-6 rounded-2xl shadow-lg border transition-all duration-300 hover:scale-105 aspect-square group",
         className
       )}
       style={{
-        transition: 'all 0.2s ease-in-out'
+        background: 'linear-gradient(135deg, var(--card-bg) 0%, #2A2A4A 100%)',
+        borderColor: 'var(--border)',
+        boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
       }}
       onMouseEnter={(e) => {
-        e.currentTarget.style.backgroundColor = '#EEFE6D';
-        e.currentTarget.style.transform = 'scale(1.05)';
+        e.currentTarget.style.transform = 'scale(1.08) translateY(-2px)';
+        e.currentTarget.style.boxShadow = '0 8px 30px rgba(255, 107, 53, 0.3)';
       }}
       onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = 'white';
         e.currentTarget.style.transform = 'scale(1)';
+        e.currentTarget.style.boxShadow = '0 4px 20px rgba(0, 0, 0, 0.3)';
       }}
     >
       {isProductsCard ? (
         <>
-          <div className="mb-3 flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 group-hover:bg-white/80">
-            <ChevronRight className="w-8 h-8 text-[#2D9A86]" />
+          <div className="mb-3 flex items-center justify-center w-16 h-16 rounded-full transition-all duration-300"
+               style={{background: 'linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%)'}}>
+            <ChevronRight className="w-8 h-8 text-white" />
           </div>
-          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
+          <span className="text-sm font-medium transition-all duration-300" style={{color: 'var(--foreground)'}}>{label}</span>
         </>
       ) : (
         <>
           <div className="mb-3">
             <CircularProgress percentage={percentage!} />
           </div>
-          <span className="text-sm font-medium text-gray-700 group-hover:text-gray-900">{label}</span>
+          <span className="text-sm font-medium transition-all duration-300" style={{color: 'var(--foreground)'}}>{label}</span>
         </>
       )}
     </button>
@@ -99,10 +109,10 @@ function QuickAction({ label, percentage, onClick, className, isProductsCard }: 
 }
 
 const quickActions = [
-  { label: 'Savings Index', percentage: 75, action: () => console.log('Send') },
-  { label: 'Debt Index', percentage: 45, action: () => console.log('Receive') },
-  { label: 'Impulsivity index', percentage: 90, action: () => console.log('Pay Bills') },
-  { label: 'Products', isProductsCard: true, action: () => console.log('Products') },
+  { label: 'Индекс сбережений', percentage: 75, action: () => console.log('Send') },
+  { label: 'Индекс долгов', percentage: 45, action: () => console.log('Receive') },
+  { label: 'Индекс импульсивности', percentage: 90, action: () => console.log('Pay Bills') },
+  { label: 'Продукты', isProductsCard: true, action: () => console.log('Products') },
 ];
 
 interface QuickActionsProps {

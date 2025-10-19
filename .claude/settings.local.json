@@ -2,7 +2,8 @@
   "permissions": {
     "allow": [
       "WebFetch(domain:www.figma.com)",
-      "WebSearch"
+      "WebSearch",
+      "Read(//Users/yerdaulet/Desktop/ai agent tutorial/Zaman_bank/zamanbank/chat/**)"
     ],
     "deny": [],
     "ask": []

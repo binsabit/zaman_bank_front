@@ -109,7 +109,7 @@ export default function ProfileTriangle({
           x={vertices.savings.x}
           y={vertices.savings.y - 10}
           textAnchor="middle"
-          className="text-xs font-medium fill-gray-700"
+          className="text-xs font-medium fill-white"
         >
           Savings: {idealProfile.savingsIndex}
         </text>
@@ -117,7 +117,7 @@ export default function ProfileTriangle({
           x={vertices.debt.x - 10}
           y={vertices.debt.y + 15}
           textAnchor="middle"
-          className="text-xs font-medium fill-gray-700"
+          className="text-xs font-medium fill-white"
         >
           Debt: {idealProfile.debtIndex}
         </text>
@@ -125,7 +125,7 @@ export default function ProfileTriangle({
           x={vertices.impulsive.x + 10}
           y={vertices.impulsive.y + 15}
           textAnchor="middle"
-          className="text-xs font-medium fill-gray-700"
+          className="text-xs font-medium fill-white"
         >
           Impulse: {idealProfile.impulsiveIndex}
         </text>

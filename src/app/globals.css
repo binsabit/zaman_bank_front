@@ -2,27 +2,31 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 :root {
-  --background: #f8fafc;
-  --foreground: #1e293b;
+  --background: #0F0F23;
+  --foreground: #ffffff;
 
-  /* Zaman Color DNA Palette */
-  --zaman-persian-green: #2D9A86;
-  --zaman-solar: #EEFE6D;
-  --zaman-cloud: #ffffff;
+  /* Fitness-Inspired Color Palette */
+  --primary-orange: #FF6B35;
+  --primary-blue: #4A90E2;
+  --electric-lime: #CCFF00;
+  --deep-purple: #2E1065;
+  --dark-bg: #0F0F23;
+  --card-bg: #1A1A3A;
+  --text-light: #B8BCC8;
 
-  /* Primary colors using Zaman palette */
-  --primary: var(--zaman-persian-green);
-  --primary-dark: #1e6b5c;
-  --secondary: var(--zaman-solar);
-  --accent: var(--zaman-solar);
+  /* Primary colors for fitness theme */
+  --primary: var(--primary-orange);
+  --primary-dark: #E55A2B;
+  --secondary: var(--primary-blue);
+  --accent: var(--electric-lime);
 
-  --card-background: var(--zaman-cloud);
-  --text-secondary: #64748b;
-  --border: #e2e8f0;
-  --success: var(--zaman-persian-green);
-  --warning: #f59e0b;
-  --error: #ef4444;
-  --info: var(--zaman-persian-green);
+  --card-background: var(--card-bg);
+  --text-secondary: var(--text-light);
+  --border: #2A2A4A;
+  --success: #10B981;
+  --warning: #F59E0B;
+  --error: #EF4444;
+  --info: var(--primary-blue);
 }
 
 @theme inline {
@@ -44,6 +48,15 @@ body {
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+  height: 100vh;
+  height: 100dvh;
+}
+
+html {
+  overflow-x: hidden;
+  height: 100vh;
+  height: 100dvh;
 }
 
 @layer base {
@@ -80,42 +93,106 @@ body {
 }
 
 @layer components {
+  /* Scrollbar styles */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+  }
+
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+
+  .scrollbar-thumb-gray-600::-webkit-scrollbar-thumb {
+    background: rgba(107, 114, 128, 0.6);
+  }
+
+  .scrollbar-track-transparent::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  /* Force word wrapping for chat messages */
+  .chat-content {
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+    word-break: break-word;
+    hyphens: auto;
+    max-width: 100%;
+  }
+
+  /* Ensure proper scrolling behavior */
+  .chat-container {
+    overflow-anchor: none;
+    scroll-behavior: smooth;
+  }
+
   .btn-primary {
-    @apply font-medium py-3 px-6 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
-    background-color: var(--zaman-persian-green);
+    @apply font-medium py-3 px-6 rounded-xl transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2 shadow-lg;
+    background: linear-gradient(135deg, var(--primary-orange) 0%, #FF8A65 100%);
     color: white;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
   }
 
   .btn-primary:hover {
-    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 53, 0.4);
   }
 
   .btn-primary:focus {
-    ring-color: var(--zaman-persian-green);
+    ring-color: var(--primary-orange);
   }
 
   .btn-secondary {
-    @apply bg-white hover:bg-gray-50 font-medium py-3 px-6 rounded-xl border transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2;
-    border-color: var(--zaman-persian-green);
-    color: var(--zaman-persian-green);
+    @apply font-medium py-3 px-6 rounded-xl border transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-offset-2;
+    background: linear-gradient(135deg, var(--card-bg) 0%, #2A2A4A 100%);
+    border-color: var(--border);
+    color: var(--foreground);
+  }
+
+  .btn-secondary:hover {
+    transform: translateY(-1px);
+    border-color: var(--primary-orange);
   }
 
   .btn-secondary:focus {
-    ring-color: var(--zaman-persian-green);
+    ring-color: var(--primary-orange);
   }
 
   .card {
-    @apply rounded-2xl shadow-sm border border-gray-100;
-    background-color: var(--zaman-cloud);
+    @apply rounded-2xl shadow-lg border transition-all duration-300;
+    background: linear-gradient(135deg, var(--card-bg) 0%, #2A2A4A 100%);
+    border-color: var(--border);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  }
+
+  .card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
   }
 
   .input-field {
-    @apply w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-1 transition-colors;
-    background-color: var(--zaman-cloud);
+    @apply w-full px-4 py-3 rounded-xl border focus:outline-none focus:ring-1 transition-all duration-300;
+    background-color: var(--card-bg);
+    border-color: var(--border);
+    color: var(--foreground);
   }
 
   .input-field:focus {
-    border-color: var(--zaman-persian-green);
-    ring-color: var(--zaman-persian-green);
+    border-color: var(--primary-orange);
+    ring-color: var(--primary-orange);
+    box-shadow: 0 0 15px rgba(255, 107, 53, 0.2);
   }
 }

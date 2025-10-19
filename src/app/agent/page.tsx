@@ -56,25 +56,103 @@ export default function AgentPage() {
     const initialMessage: Message = {
       id: '1',
       type: 'ai',
-      content: 'Hello! I\'m your financial assistant. How can I help you today?',
+      content: 'Привет! Я ваш финансовый помощник. Как я могу вам помочь сегодня?',
       timestamp: new Date(),
     };
     setMessages([initialMessage]);
   };
 
-  const resetChat = () => {
-    localStorage.removeItem('chat-messages');
-    localStorage.removeItem('chat-files');
-    initializeChat();
+  const resetChat = async () => {
+    console.log('Reset button clicked');
+
+    try {
+      // Call backend reset endpoint
+      console.log('Calling chatApi.resetChat()...');
+      await chatApi.resetChat();
+      console.log('Backend reset successful');
+
+      // Set initial message after successful reset
+      const initialMessage: Message = {
+        id: '1',
+        type: 'ai',
+        content: 'Привет! Я ваш финансовый помощник. Как я могу вам помочь сегодня?',
+        timestamp: new Date(),
+      };
+      setMessages([initialMessage]);
+      console.log('Reset completed successfully');
+    } catch (error) {
+      console.error('Error resetting chat in agent page:', error);
+
+      // Fallback to local reset if backend fails
+      console.log('Falling back to local reset...');
+      localStorage.removeItem('chat-messages');
+      localStorage.removeItem('chat-files');
+      const initialMessage: Message = {
+        id: '1',
+        type: 'ai',
+        content: 'Привет! Я ваш финансовый помощник. Как я могу вам помочь сегодня?',
+        timestamp: new Date(),
+      };
+      setMessages([initialMessage]);
+      console.log('Local reset completed');
+    }
   };
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      // Try multiple methods to ensure scrolling works
+      messagesEndRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end',
+        inline: 'nearest'
+      });
+
+      // Also try scrolling the parent container
+      const chatContainer = messagesEndRef.current.closest('.chat-container');
+      if (chatContainer) {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+      }
+    }
   };
 
   useEffect(() => {
-    scrollToBottom();
+    // Use requestAnimationFrame to ensure DOM is updated
+    requestAnimationFrame(() => {
+      scrollToBottom();
+    });
   }, [messages]);
+
+  useEffect(() => {
+    // Scroll when loading state changes
+    if (!isLoading) {
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+    }
+  }, [isLoading]);
+
+  // Force scroll after async operations
+  const forceScrollToBottom = () => {
+    // Multiple attempts to ensure scrolling works with large content
+    requestAnimationFrame(() => {
+      scrollToBottom();
+    });
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+    }, 100);
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+    }, 300);
+    setTimeout(() => {
+      requestAnimationFrame(() => {
+        scrollToBottom();
+      });
+    }, 500);
+  };
 
   const handleSendMessage = async (content: string, type: MessageType = 'text', file?: File) => {
     try {
@@ -96,7 +174,11 @@ export default function AgentPage() {
 
       // Add user message to chat
       setMessages(prev => [...prev, userMessage]);
+      console.log('Setting isLoading to true');
       setIsLoading(true);
+
+      // Force scroll after adding user message
+      forceScrollToBottom();
 
       // Prepare content for API call
       let processedContent = content;
@@ -107,20 +189,24 @@ export default function AgentPage() {
         case 'audio':
           if (file) {
             try {
-              const transcribedText = await chatApi.transcribeAudio(file);
-              processedContent = transcribedText || 'Voice message received';
+              // For audio, we'll let the backend handle transcription
+              // Just update the display content for now
+              processedContent = 'Голосовое сообщение отправлено';
 
-              // Update user message with transcribed content
+              // Update user message with audio indicator
               setMessages(prev =>
                 prev.map(msg =>
                   msg.id === userMessage.id
-                    ? { ...msg, content: `🎤 ${transcribedText || 'Voice message'}` }
+                    ? { ...msg, content: `🎤 Голосовое сообщение` }
                     : msg
                 )
               );
-            } catch (transcriptionError) {
-              console.error('Audio transcription failed:', transcriptionError);
-              processedContent = 'Voice message (transcription unavailable)';
+
+              // Force scroll after audio message update
+              forceScrollToBottom();
+            } catch (audioError) {
+              console.error('Audio processing failed:', audioError);
+              processedContent = 'Голосовое сообщение (обработка недоступна)';
             }
           }
           break;
@@ -138,23 +224,20 @@ export default function AgentPage() {
           // Text is already processed
           break;
       }
+      function utf8ToBase64(str: string): string  {
+        // 1. Encode the UTF-8 string to a percent-encoded string
+        const utf8EncodedStr = encodeURIComponent(str);
 
-      // Send to remote API
-      const response = await chatApi.sendMessage(processedContent, type, fileToSend);
+        // 2. Escape/unescape to create a "binary string"
+        // (where each character's code point is a byte value)
+        let binaryString = unescape(utf8EncodedStr);
 
-      // Create AI response message
-      const aiMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        type: 'ai',
-        content: response.content || 'I received your message but couldn\'t generate a response.',
-        messageType: response.type || 'text',
-        image: response.image,
-        actions: response.actions,
-        timestamp: new Date(),
-      };
+        // 3. Use btoa() to convert the binary string to Base64
+        return btoa(binaryString);
+      }
 
-      // Add AI response to chat
-      setMessages(prev => [...prev, aiMessage]);
+      // Force scroll after AI response
+      forceScrollToBottom();
 
     } catch (error) {
       console.error('Error in handleSendMessage:', error);
@@ -168,22 +251,31 @@ export default function AgentPage() {
       };
 
       setMessages(prev => [...prev, errorMessage]);
+
+      // Force scroll after error message
+      forceScrollToBottom();
     } finally {
+      console.log('Setting isLoading to false');
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
-      <Header
-        title="AI Assistant"
-        showNotifications={false}
-        showReset={true}
-        onReset={resetChat}
-      />
+    <div className="h-screen h-dvh flex flex-col" style={{background: 'var(--background)'}}>
+      <div className="flex-shrink-0 sticky top-0 z-50" style={{background: 'var(--background)'}}>
+        <Header
+          title="ИИ Помощник"
+          showNotifications={false}
+          showReset={true}
+          onReset={resetChat}
+        />
+      </div>
 
-      <div className="flex-1 flex flex-col max-w-md mx-auto w-full">
-        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
+      <div className="flex-1 flex flex-col max-w-md mx-auto w-full min-h-0 overflow-hidden">
+        <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-32 scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent min-h-0 chat-container" style={{
+          maxHeight: 'calc(100vh - 200px)',
+          height: '100%'
+        }}>
           {messages.map((message) => (
             <ChatMessage
               key={message.id}
@@ -193,11 +285,18 @@ export default function AgentPage() {
           ))}
           {isLoading && (
             <div className="flex justify-start">
-              <div className="bg-white rounded-2xl px-4 py-3 max-w-xs shadow-sm">
+              <div className="rounded-2xl px-4 py-3 max-w-xs shadow-lg"
+                   style={{
+                     background: 'linear-gradient(135deg, var(--card-bg) 0%, #2A2A4A 100%)',
+                     boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)'
+                   }}>
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-[#2D9A86] rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-[#2D9A86] rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-[#2D9A86] rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 rounded-full animate-bounce"
+                       style={{background: 'var(--primary)'}}></div>
+                  <div className="w-2 h-2 rounded-full animate-bounce"
+                       style={{background: 'var(--primary)', animationDelay: '0.1s'}}></div>
+                  <div className="w-2 h-2 rounded-full animate-bounce"
+                       style={{background: 'var(--primary)', animationDelay: '0.2s'}}></div>
                 </div>
               </div>
             </div>
@@ -206,8 +305,9 @@ export default function AgentPage() {
         </div>
       </div>
 
-      <div className="fixed bottom-16 left-0 right-0 z-20 bg-gray-50 pt-2 pb-2">
-        <div className="max-w-md mx-auto px-4">
+      <div className="fixed left-0 right-0 z-20"
+           style={{background: 'var(--background)', bottom: '72px'}}>
+        <div className="w-full">
           <ChatInput
             onSendMessage={handleSendMessage}
             disabled={isLoading}

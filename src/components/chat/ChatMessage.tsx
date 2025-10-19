@@ -26,7 +26,7 @@ export default function ChatMessage({ message, onActionClick }: ChatMessageProps
   };
 
   const renderFilePreview = () => {
-    if (!message.file) return null;
+    if (!message.file || !message.file.type) return null;
 
     const isImage = message.file.type.startsWith('image/');
 
@@ -117,10 +117,12 @@ export default function ChatMessage({ message, onActionClick }: ChatMessageProps
     const progress = audioDuration > 0 ? (audioCurrentTime / audioDuration) * 100 : 0;
 
     return (
-      <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg">
+      <div className="flex items-center space-x-3 p-3 rounded-lg"
+           style={{background: 'var(--border)'}}>
         <button
           onClick={handleAudioPlay}
-          className="p-2 bg-[#2D9A86] text-white rounded-full hover:bg-[#1e6b5c] transition-colors"
+          className="p-2 text-white rounded-full transition-all duration-200 hover:scale-110"
+          style={{background: 'linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%)'}}
         >
           {isAudioPlaying ? (
             <Pause className="w-4 h-4" />
@@ -129,14 +131,17 @@ export default function ChatMessage({ message, onActionClick }: ChatMessageProps
           )}
         </button>
         <div className="flex-1">
-          <div className="w-full h-2 bg-gray-200 rounded-full cursor-pointer">
+          <div className="w-full h-2 rounded-full cursor-pointer" style={{background: 'var(--border)'}}>
             <div
-              className="h-full bg-[#2D9A86] rounded-full transition-all duration-300"
-              style={{ width: `${progress}%` }}
+              className="h-full rounded-full transition-all duration-300"
+              style={{
+                width: `${progress}%`,
+                background: 'linear-gradient(90deg, var(--primary-orange) 0%, var(--primary-blue) 100%)'
+              }}
             ></div>
           </div>
         </div>
-        <span className="text-sm text-gray-500">
+        <span className="text-sm" style={{color: 'var(--text-secondary)'}}>
           {formatAudioTime(audioDuration)}
         </span>
         <audio ref={audioRef} />
@@ -163,13 +168,17 @@ export default function ChatMessage({ message, onActionClick }: ChatMessageProps
 
     return (
       <div className="mt-3 space-y-2">
-        <p className="text-sm text-gray-600">Quick actions:</p>
+        <p className="text-sm" style={{color: 'var(--text-secondary)'}}>Quick actions:</p>
         <div className="flex flex-wrap gap-2">
           {message.actions.map((action, index) => (
             <button
               key={index}
               onClick={() => onActionClick?.(action)}
-              className="px-3 py-1 text-sm bg-[#EEFE6D] hover:bg-[#e5f061] text-gray-800 rounded-full transition-colors"
+              className="px-3 py-1 text-sm rounded-full transition-all duration-200 hover:scale-105"
+              style={{
+                background: 'var(--accent)',
+                color: 'var(--background)'
+              }}
             >
               {action}
             </button>
@@ -183,27 +192,39 @@ export default function ChatMessage({ message, onActionClick }: ChatMessageProps
     // Simple highlighting for numbers that look like amounts
     const highlightedText = text.replace(
       /\$[\d,]+\.?\d*/g,
-      '<span class="bg-[#EEFE6D] px-1 rounded font-semibold">$&</span>'
+      '<span style="background: var(--accent); color: var(--background); padding: 2px 4px; border-radius: 4px; font-weight: 600;">$&</span>'
     );
 
     return (
       <div
         dangerouslySetInnerHTML={{ __html: highlightedText }}
-        className="whitespace-pre-wrap"
+        className="whitespace-pre-wrap break-words chat-content"
+        style={{
+          wordWrap: 'break-word',
+          overflowWrap: 'break-word',
+          wordBreak: 'break-word'
+        }}
       />
     );
   };
 
   return (
-    <div className={cn("flex", isUser ? "justify-end" : "justify-start")}>
-      <div className={cn("flex space-x-2 max-w-[80%]", isUser ? "flex-row-reverse space-x-reverse" : "")}>
+    <div className={cn("flex w-full", isUser ? "justify-end" : "justify-start")}>
+      <div className={cn("flex space-x-2 w-full max-w-[85%]", isUser ? "flex-row-reverse space-x-reverse" : "")}>
         {/* Avatar */}
         <div className={cn(
           "w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0",
           isUser
-            ? "bg-[#2D9A86] text-white"
-            : "bg-gray-200 text-gray-600"
-        )}>
+            ? ""
+            : ""
+        )}
+        style={{
+          background: isUser
+            ? 'linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%)'
+            : 'linear-gradient(135deg, var(--card-bg) 0%, #2A2A4A 100%)',
+          color: 'white',
+          border: isUser ? 'none' : '1px solid var(--border)'
+        }}>
           {isUser ? (
             <User className="w-4 h-4" />
           ) : (
@@ -212,19 +233,32 @@ export default function ChatMessage({ message, onActionClick }: ChatMessageProps
         </div>
 
         {/* Message Bubble */}
-        <div className="flex flex-col min-w-0 flex-1">
+        <div className="flex flex-col min-w-0 flex-1 overflow-hidden">
           <div className={cn(
-            "rounded-2xl px-4 py-3 shadow-sm break-words",
-            isUser
-              ? "bg-[#2D9A86] text-white"
-              : "bg-white text-gray-900"
-          )}>
+            "rounded-2xl px-4 py-3 shadow-lg break-words overflow-hidden",
+            isUser ? "" : ""
+          )}
+          style={{
+            background: isUser
+              ? 'linear-gradient(135deg, var(--primary-orange) 0%, var(--primary-blue) 100%)'
+              : 'linear-gradient(135deg, var(--card-bg) 0%, #2A2A4A 100%)',
+            color: isUser ? 'white' : 'var(--foreground)',
+            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+            wordWrap: 'break-word',
+            overflowWrap: 'break-word',
+            hyphens: 'auto'
+          }}>
             {message.messageType === 'audio' ? (
               renderAudioMessage()
             ) : (
-              <div className="text-sm break-words overflow-wrap-anywhere">
+              <div className="text-sm break-words overflow-wrap-anywhere word-break-break-all chat-content" style={{
+                wordWrap: 'break-word',
+                overflowWrap: 'break-word',
+                wordBreak: 'break-word',
+                whiteSpace: 'pre-wrap'
+              }}>
                 {isUser ? (
-                  <span className="whitespace-pre-wrap">{message.content}</span>
+                  <span className="whitespace-pre-wrap break-words">{message.content}</span>
                 ) : (
                   renderHighlightedText(message.content)
                 )}
@@ -238,9 +272,10 @@ export default function ChatMessage({ message, onActionClick }: ChatMessageProps
 
           {/* Timestamp */}
           <div className={cn(
-            "text-xs text-gray-500 mt-1",
+            "text-xs mt-1",
             isUser ? "text-right" : "text-left"
-          )}>
+          )}
+          style={{color: 'var(--text-secondary)'}}>
             {formatTime(message.timestamp)}
           </div>
         </div>

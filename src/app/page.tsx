@@ -6,14 +6,16 @@ import BottomNav from '@/components/navigation/BottomNav';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      <Header userName="John" />
+    <div className="h-screen h-dvh flex flex-col" style={{background: 'var(--background)'}}>
+      <div className="flex-shrink-0">
+        <Header userName="John" />
+      </div>
 
-      <main className="max-w-md mx-auto">
+      <main className="flex-1 overflow-y-auto max-w-md mx-auto scrollbar-thin scrollbar-thumb-gray-600 scrollbar-track-transparent pb-20">
         <div className="px-4 py-6">
           <BalanceCard
             balance={12450.75}
-            subtitle="Total Balance"
+            subtitle="Financial Health Score"
             className="mb-6"
           />
         </div>
@@ -23,7 +25,9 @@ export default function Home() {
         <TransactionList />
       </main>
 
-      <BottomNav />
+      <div className="flex-shrink-0">
+        <BottomNav />
+      </div>
     </div>
   );
 }
